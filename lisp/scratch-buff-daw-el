@@ -1,0 +1,43 @@
+
+(defun daw-fortune-scratch-message ()
+  "insert fortune into buffer if fortune exists on system"
+    (interactive)
+    (let ((fortune
+           (when (executable-find "fortune")
+             (with-temp-buffer
+               (shell-command "fortune" t)
+               (let ((comment-start ";;"))
+                 (comment-region (point-min) (point-max)))
+               (delete-trailing-whitespace (point-min) (point-max))
+               (concat (buffer-string) "\n")))))
+      (if (called-interactively-p 'any)
+          (insert fortune)
+        fortune)))
+
+  (let ((fortune (daw-fortune-scratch-message)))
+    (when fortune
+      (setq initial-scratch-message fortune)))
+
+(defun --scratch-buffer(&optional reset)
+  "Get the *scratch* buffer object.
+Make new scratch buffer unless it exists. 
+If RESET is non-nil arrange it that it can't be killed."
+  (let ((R (get-buffer "*scratch*")))
+    (unless R
+      (message "Creating new *scratch* buffer")
+      (setq R (get-buffer-create "*scratch*") reset t))
+        (when reset
+          (save-excursion
+            (set-buffer R)
+            (let ((fortune (daw-fortune-scratch-message)))
+              (when fortune
+                    (setq initial-scratch-message fortune)))
+            (lisp-interaction-mode)
+            (make-local-variable 'kill-buffer-query-functions)
+            (add-hook 'kill-buffer-query-functions '(lambda()(bury-buffer) nil)
+          )))
+    R))
+
+(--scratch-buffer t)
+(run-with-idle-timer 3 t '--scratch-buffer)
+

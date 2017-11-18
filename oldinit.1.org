@@ -1,0 +1,609 @@
+
+#+TITLE: init.el
+#+AUTHOR: David A Wagle
+#+EMAIL: david.wagle@gmail.com
+
+
+* Set up load path so use-package can install itself
+
+  
+
+  
+* Tangle to init.el every save
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(add-hook 'after-save-hook
+  (lambda () (org-babel-tangle))
+     nil t)
+   
+#+END_SRC
+
+* Install use-pacakge if necessary
+
+
+Using melpa provides a much better package system and use-package provides a much better way of configuring most packages, leading to neater code. 
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(package-initialize)
+(unless (assoc-default "melpa" package-archives)
+  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
+(unless (assoc-default "org" package-archives)
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t))
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-verbose t)
+(setq use-package-always-ensure t)
+(use-package auto-compile
+   :config (auto-compile-on-load-mode))
+(setq load-prefer-newer t)
+
+(message "STARTUP: Package System Initialized")
+
+
+#+END_SRC
+
+* EVIL Mode 
+Because, EVIL Mode!
+
+#+NAME: Evil Mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+(use-package evil
+    :init (evil-mode 1))
+
+(message "STARTUP: Evil Mode Initialized")
+#+END_SRC
+
+* Load Dash, because we'll use it soon
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(unless (package-installed-p 'dash)
+   (package-install 'dash))
+
+(use-package dash)
+
+(message "STARTUP: dash intalled")
+#+END_SRC
+
+* Basic Appearance Issues
+  
+We want to get rid of unnecessary clutter.
+
+Next we define a pair of functions to flip between two themes, one light and one dark. After that, we set up a function to toggle between the two themes and bind it to the keystroke:
+C-t T T
+
+Any themes we want to have in our cycle should be added to the list daw/theme-list
+
+Finally we set the font that we want to use. 
+
+** First set the variables used int this section
+
+#+NAME: Variables for Appearance
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(setq daw/theme-list '(zenburn professional solarized-light solarized-dark))
+(setq daw/font-name "Hack-16")
+
+#+END_SRC
+
+** Second do the general aesthetics bits
+
+#+NAME: general aesthetics
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(when window-system
+  (menu-bar-mode 0)
+  (tool-bar-mode 0)
+  (scroll-bar-mode 0)
+  (tooltip-mode 0))
+
+(setq inhibit-startup-messages t)
+(setq initial-scratch-message "")
+
+(setq fancy-splash-image "~/emacs.jpg")
+
+(use-package powerline
+  :ensure t
+  :pin melpa
+  :init (powerline-default-theme))
+
+
+#+END_SRC
+
+** Take care of theme switching 
+*** safe themes
+#+NAME: Safe Theme Values
+#+BEGIN_SRC emacs-lisp :tangle yes
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-enabled-themes (quote (professional)))
+ '(custom-safe-themes
+   (quote
+    ("cdfc5c44f19211cfff5994221078d7d5549eeb9feda4f595a2fd8ca40467776c" "77c65d672b375c1e07383a9a22c9f9fc1dec34c8774fe8e5b21e76dca06d3b09" default))))
+
+
+#+END_SRC
+
+*** Theme Functions
+   
+This usess the daw/theme-list defined in the "variables for appearance" section
+
+first define some helper functions
+#+NAME: Map Themes to pacakges
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+  (defconst daw/theme-packages
+  '(
+    (zenburn                . zenburn-theme)
+    (solarized-light        . solarized-theme)
+    (solarized-dark         . solarized-theme)
+    (zenburn                . zenburn-theme))
+
+  (defun daw/get-theme(theme)
+    "returns the package to install"
+    (cond
+     ((memq theme-name emacs-built-n-themes) nil)
+     ((assq theme-name daw/theme-pacakges)
+      (cdr (assq theme  daw/theme-packages)))
+     (t (intern (format "$S-theme" theme)))))
+
+
+  (defun daw/load-theme(theme-package)
+    (unelss (package-installed-p theme-package)
+            (pacakge-isntall package_package)))
+#+END_SRC
+
+Then go get and activate the themes
+
+#+NAME: Theme Switching
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(defun daw/theme-enable (theme)
+     "As `enable-theme', but load the theme if necessary.
+   Respect `custom-safe-themes'."
+   (daw/load-theme (daw/get-theme theme))
+   (if (custom-theme-p theme)
+       (enable-theme theme)
+     (load-theme theme)))
+
+(defun daw/next-theme ()
+  "Cycle between the themes in `multitheme-base-theme-list'.
+   If none of these themes is currently active, instead enable the
+   first element of `multitheme-base-theme-list'.
+
+   If a theme to be enabled is not yet defined, attempt to load it
+   first (using `load-theme').  Respect `custom-safe-themes'.
+
+    After all theme changes have been made, run
+    `daw/theme-change-hook'."
+  (interactive)
+  (when (require 'validate nil :noerror)
+    (validate-variable 'daw/theme-list)
+    (validate-variable 'daw/theme-change-hook))
+  (let ((themes (-drop-while
+                 (lambda (thm) (not (custom-theme-enabled-p thm)))
+                 daw/theme-list)))
+    ;; Cycle base theme
+    (if (null themes)
+        (daw/theme-enable (car daw/theme-list))
+      (disable-theme (car themes))
+      (daw/theme-enable (or (cadr themes)
+                              (car daw/theme-list))))
+      ;; Run hooks
+    (run-hooks 'daw/theme-change-hook)))
+
+
+(global-set-key (kbd "C-x T T") 'daw/next-theme)
+
+;; need to start the base theme
+(daw/next-theme)
+
+#+END_SRC
+
+** Take care of setting the font
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defun daw/fontify-frame (frame)
+   (set-frame-parameter frame 'font daw/font-name))
+
+(daw/fontify-frame nil)
+(push 'daw/fontify-frame after-make-frame-functions)
+
+(message "STARTUP: UI Set")
+#+END_SRC
+   
+** Screen size
+ 
+
+(defun set-frame-size-according-to-resolution ()
+  (interactive)
+  (if window-system
+  (progn
+    ;; use 120 char wide window for largeish displays
+    ;; and smaller 80 column windows for smaller displays
+    ;; pick whatever numbers make sense for you
+    (if (> (x-display-pixel-width) 1280)
+           (add-to-list 'default-frame-alist (cons 'width 120))
+           (add-to-list 'default-frame-alist (cons 'width 80)))
+    ;; for the height, subtract a couple hundred pixels
+    ;; from the screen height (for panels, menubars and
+    ;; whatnot), then divide by the height of a char to
+    ;; get the height we want
+    (add-to-list 'default-frame-alist 
+         (cons 'height (/ (- (x-display-pixel-height) 200)
+                             (frame-char-height)))))))
+
+(add-hook 'after-make-frame-functions
+  (lambda ()
+    (if window-system  
+     (set-frame-size-according-to-resolution))))
+
+
+
+   
+* User-Interface stuff
+This is where we put things like global user stuff that isn't appearance 
+based stuff
+
+#+NAME: ui stuf
+#+BEGIN_SRC emacs-list :tangle yes
+
+;; Typing "yes" is so much work . . 
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+;; UTF-8 forever . . .
+(prefer-coding-system 'utf-8)
+
+(message "STARTUP: User interface variables set")
+
+#+END_SRC
+
+* ERC 
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+ (require 'erc-services)
+ (erc-services-mode 1)
+
+ (require 'erc-pcomplete)
+ (erc-pcomplete-mode t)
+
+ (require 'erc-fill)
+;; (erc-fill-function 'erc-static)
+ (setq erc-timestamp-format "[%H:%M] ")
+ (setq erc-fill-prefix "      + ")
+
+
+(use-package erc
+  :init
+    (setq erc-autojoin-channels-alist '((".*freenode.net" "#emacs"
+                        "#clojure" "#python")))
+    (setq erc-prompt-for-nickserv-password nil)
+    (setq erc-prompt-for-pasword nil)
+    (setq erc-user-full-name "David Wagle") 
+    (erc-autojoin-mode 0)
+    (setq erc-nick "kingpatzer")
+    (setq erc-nickserv-passwords
+       '((freenode         ((erc-nick . ,my-erc-password)))))
+    (setq erc-port "6667")
+    (setq erc-nickserv-identify-mode 'autodetect)
+    (setq erc-server "irc.freenode.net")
+      (add-hook 'erc-server-NOTICE-functions 'daw/post-autojoin)
+    (add-hook 'erc-after-connect
+        '(lambda (SERVER NICK)
+           (cond
+           ((string-match "freenode\\.net" SERVER)
+           (erc-message "PRIVMSG" "NickServ identify shadowfax")))))
+    (add-hook 'erc-mode-hook
+        '(lambda ()
+          (pcomplete-erc-setup)
+          (erc-completion-mode 1)))
+   :bind
+    ("C-x C-i" . daw/erc))
+
+(defun daw/post-autojoin (proc parsed)
+  (when (and (string-equal "irc.freenode.net"
+            (erc-response.sender parsed))
+        (string-match ".*NickServ set your hostname to.*" 
+                   (erc-response.contents parsed)))
+        (with-current-buffer (process-buffer proc)
+           (erc-autojoin-channels erc-session-server (erc-current-nick))
+  nil)))
+
+
+(defun daw/erc ()
+    "connect to irc"
+    (interactive)
+    (erc :server "irc.freenode.net" :port 6667
+         :nick "kingpatzer"  :full-name "David Wagle"
+         :password nil))
+
+
+
+
+#+END_SRC
+
+
+* Helm Everywhere
+
+Helm is an amazing incremental completion and narrowing framework
+that is useful pretty much everywhere
+
+#+NAME: Helm Setup
+#+BEGIN_SRC emacs-lisp :tangle yes
+  (use-package helm
+        :init 
+           (require 'helm-config)
+           (helm-mode t)
+           (require 'helm-eshell)
+           (add-hook 'eshell-mode-hook
+               (lambda ()
+                   (eshell-cmpl-initialize)
+                   (define-key eshell-mode-map [remap eshell-pcomplete] 'helm-esh-pcomplete)
+                   (define-key eshell-mode-map (kbd "M-r") 'helm-eshell-history)))
+           (when (executable-find "curl")   
+                (setq helm-google-suggest-use-curl-p t))
+           (setq helm-split-window-in-side-p         t)
+           (setq helm-ff-seasrch-library-in-sexp     t)
+           (setq helm-scroll-amount                  8)
+           (setq helm-ff-file-name-history-use-recent t)
+           (setq helm-echo-input-in-header-line       t)
+        :bind
+           (("M-x"        . helm-M-x)
+            ("C-x C-m"    . helm-M-x)
+            ("M-y"        . helm-show-kill-ring)
+            ("C-x b"      . helm-mini)
+            ("C-x C-b"    . helm-buffer-list)
+            ("C-x C-f"    . helm-find-files)
+            ("C-h f"      . helm-apropos)
+            ("C-h r"      . helm-info-emacs)
+            ("C-h C-l"    . helm-locate-library)
+            ("C-c f"      . helm-recnetf)         
+            :map shell-mode-map
+            ("C-c C-l"    . helm-comint-input-ring)
+            :map minibuffer-local-map 
+            ("C-c C-l"    . helm-minibuffer-history)
+            ("ESC"        . minibuffer-keyboard-quit)
+            :map isearch-mode-map
+            ("C-o"        . helm-occur-from-isearch) 
+            :map helm-command-map
+            ("o"          . helm-occur)
+            ("g"          . helm-do-grep)
+            ("C-nc w"      . helm-wikipedia-suggest)
+            ("SPC"        . helm-all-mark-rings)
+            ("C-c h"      . helm-execute-persistent-action)
+            ("h"          . helm-begging-of-buffer)
+            ("j"          . helm-next-line)
+            ("k"          . helm-previous-line)
+            ("j"          . helm-end-of-buffer)
+            ("g"          . helm-begging-of-buffer)
+            ("G"          . helm-end-of-buffer)
+            ("K"          . helm-scroll-other-window-down) 
+            ("J"          . helm-scroll-other-window-up)
+            ("m"          . helm-toggle-visible-mark)
+            ("t"          . helm-toggle-all-marks)
+            ("U"          . helm-unmark-all)
+            ("i"          . nil)
+            ("}"          . helm-next-source)
+            ("{"          . helm-previous-source)
+            ("H"          . helm-help) 
+            ("v"          . helm-execute-persistent-action)
+            ("d"          . helm-persistent-delete-marked)
+            ("f"          . helm-follow-mode)
+            ("ESC"        . helm-keyboard-quit)))
+            
+      
+  (use-package ag
+        :init
+            (setq ag-highlight-search t
+                  ag-resuse-buffers t))
+
+  (use-package helm-ag
+        :init 
+            (setq helm-follow-mode-persistent t))
+
+
+  (use-package helm-descbinds
+        :init (helm-descbinds-mode))
+
+  (message "STARTUP: Helm initialized")
+#+END_SRC 
+
+* Org-Mode
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(use-package org
+      :bind 
+         (
+          ("C-x o"           . nil)
+          ("C-x w"           . other-window)
+          ("C-x o l"         . org-store-link)
+          ("C-x o a"         . org-agenda)
+          ("C-x o c"         . org-capture)))
+
+
+(setq org-directory (expand-file-name "~/Dropbox/Emacs/org"))
+(setq org-agenda-files '("~/Dropbox/Emacs/org"))
+
+(setq org-todo-keywords
+  '((seuqence "IDEA(i)" "TODO(t)" "STARTED(s)" "NEXT(n)" "WAITING(w)" "|"  "DONE(d)")
+    (sequence "|" "CANCELLED(c)" "DELEGATED(l)" "SOMEDAY(m)")))
+
+(setq org-tag-persistent-alist
+   '((:startgroup . nil)
+     ("HOME" .?h)
+     ("RESEARCH" . ?r)
+     ("WRITING"  . ?w)
+     (:endgroup . nil)
+     (:STARTGROUP . nil) 
+     ("CLOJURE" . ?c)
+     ("PYTHON"  . ?p)
+     ("SCHOOL"  . ?s)
+     (:endgroup . nil)
+     (:startgroup . nil)
+     ("URGENT" . ?u)
+     (:endgroup . nil)))
+
+;; Make org pretty
+
+(use-package org-bullets
+       :init  
+         
+
+
+;; disable priorities
+
+(setq org-enable-priority-comands nil)
+
+;; lists
+
+(setq org-list-demote-modify-bullet (quote (("+" . "-")
+                                            ("*" . "-")
+                                            ("1." . "-")
+                                            ("1)" . "a)"))))
+;; Agenda Congif
+
+     (setq org-agenda-ndays 7)
+     (setq org-agenda-show-all-dates t)
+     (setq org-agenda-skip-deadline-if-done t)
+     (setq org-agenda-skip-scheduled-if-done t)
+     (setq org-agenda-start-on-weekday nil)
+     (setq org-deadline-warning-days 14)
+
+     (setq org-agenda-custom-commands
+      '(("g" . "GTD contexts")
+        ("gh" "Home" tags-todo "HOME")
+        ("gu" "Urgent" tags-todo "URGENT")
+        ("G" "GTD Block Agenda"
+         ((todo "STARTED")
+          (tags-todo "URGENT")
+          (todo "NEXT"))
+         ((org-agenda-prefix-format "[ ] %T: ")
+          (org-agenda-with-colors t)
+          (org-agenda-compact-blocks t)
+          (org-agenda-remove-tags t)
+          (ps-number-of-columns 2)
+          (ps-landscape-mode t))
+         ;;nil                      ;; i.e., no local settings
+         ("~/next-actions.txt"))
+       ))
+
+;; Capture
+
+(setq org-reverse-note-order t)
+
+(setq org-capture-templates
+      '(("t" "Todo" entry (file+headline "~/Dropbox/Emacs/org/mygtd.org" "Tasks")
+         "* TODO %?\nAdded: %U\n" :prepend t :kill-buffer t)
+        ("w" "Web" entry (file+headline "~/Dropbox/Emacs/org/index.org" "Tasks")
+         "* TODO %?\nAdded: %U\n" :prepend t :kill-buffer t)
+        ("i" "Idea" entry (file+headline "~/Dropbox/Emacs/mygtd.org" "Someday/Maybe")
+         "* IDEA %?\nAdded: %U\n" :prepend t :kill-buffer t)
+        ("h" "Home" entry (file+headline "~/Dropbox/Emacs/home.org" "Home")
+         "* TODO %?\nAdded: %U\n" :prepend t :kill-buffer t)
+        )
+      )
+;;
+
+
+
+;; source code
+
+(setq org-src-fontify-natively t)
+(setq org-src-tab-acts-natively t)
+
+
+;; make ispell behave
+(add-to-list 'ispell-skip-region-alist '(":\\(PROPERTIES\\|LOGBOOK\\):" . ":END:"))
+(add-to-list 'ispell-skip-region-alist '("#\\+BEGIN_SRC" . "#\\+END_SRC"))
+(add-to-list 'ispell-skip-region-alist '("#\\+BEGIN_EXAMPLE" . "#\\+END_EXAMPLE"))
+
+
+
+(message "STARTUP: Org-mode enabled")
+#+END_SRC
+
+* Terminal
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(use-package term
+  :bind (("C-c t" . term)
+         :map term-mode-map
+         ("M-p" . term-send-up)
+         ("M-n" . term-send-down)
+         :map term-raw-map
+         ("M-o" . other-window)
+         ("M-p" . term-send-up)
+         ("M-n" . term-send-down)))
+
+(message "STARTUP: terminal info set")
+
+#+END_SRC
+
+
+* Auto Completion
+
+#+NAME: Company Mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(use-package company
+      :pin melpa
+      :init
+        (setq comapny-idle-deal 0.5
+              company-tootip-limit 10
+              company-minimum-prefix-length 2
+              company-tooltip-flip-when-above t)
+      :config
+       (add-hook 'after-init-hook 'global-company-mode))
+
+(use-package company-auctex)
+(use-package company-bibtex)
+(use-package company-jedi)
+(use-package company-try-hard)
+
+
+
+(message "STARTUP: Auto Completion enabled")
+#+END_SRC
+
+           
+
+* Spell Checking
+
+#+NAME: Spell Checking with Hunspell
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(use-package ispell
+      :init
+         (setq ispell-dictionary "en_US"
+               ispell-program-name "hunspell"))
+
+        
+(message "STARTUP: Spell checking enabled")
+#+END_SRC
+
+
+* Flycheck
+
+#+NAME: Flycheck config
+#+BEGIN_SRC emacs-lisp :tangle yes
+
+(use-package flycheck
+     :init (global-flycheck-mode))
+
+(use-package flycheck-clojure
+     :init 
+          (eval-after-load 'flycheck '(flycheck-clojure-setup)))
+
+(message "STARTUP: Flycheck enabled")
+#+END_SRC

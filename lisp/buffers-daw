@@ -1,0 +1,36 @@
+;; buffers need some help sometimes
+;;
+
+(require 'uniquify)
+
+;;
+;; give buffers better unique names
+;;
+
+(setq
+  uniquify-buffer-name-style 'forward    ; names use / for delimiter
+  uniquify-after-kill-buffer-p t         ; rationalize after kill
+  uniquify-ignore-buffers-re "^\\*")     ; ignore system buffers
+
+;;
+;; the minibuffer needs some tweaks
+;;
+
+(setq enable-recursive-minibuffers nil)  ;  allow mb cmds in the mb
+(setq max-mini-window-height .25)        ;  max 2 lines
+(setq minibuffer-scroll-window nil)      ; no scrolling in mb
+(setq resize-mini-windows nil)           ; no resizing the mb
+
+(icomplete-mode t)                       ; completion in minibuffer
+(setq
+  icomplete-prospects-height 1           ; don't spam my minibuffer
+  icomplete-compute-delay 0)             ; don't wait
+
+
+(use-package icomplete+
+  :no-require t
+  :defer t)
+
+(eval-after-load "icomplete"
+   '(progn (require 'icomplete+)))       ; drew adams' extras
+
