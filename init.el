@@ -81,10 +81,8 @@
 
 ;; utf-8 everywhere
 
-
-
 (prefer-coding-system 'utf-8)
-(set-default-coding-systems 'utf-8)
+;;(set-default-coding-systems 'utf-8)
 
 (when (display-graphic-p)
   (setq x-select-request-type
@@ -95,8 +93,38 @@
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 ;;
+;; make isearch wrap around
+;;
+
+(defadvice isearch-repeat (after isearch-no-fail activate)
+  "Allow isearch to wrap if nothing found searching forawrd.
+Deactivates at first failt o prevent an infinite loop."
+  (unless isearch-success
+    (ad-disable-advice 'search-repate 'after 'isearch-no-fail)
+    (ad-activate 'isearch-repeat)
+    (isearch-repeat (if isearch-foward 'forward))
+    (ad-enable-advice 'isearch-repeat 'after 'search-no-fail)
+    (ad-activate 'isearch-repeat)))
+
+
+;;
+;; linum in programing modes and add padding
+;;
+
+(add-hook 'prog-mode-hook 'linum-mode)
+(defvar linum-format)
+(setq linum-format "%4d \u2502 ")
+
+;;
+;; highlight current line in programming modes
+;;
+
+(add-hook 'prog-mode-hook 'hl-line-mode)
+
+
+;;
 ;; minibuffer stuff
-''
+;;
 
 (require 'uniquify)
 
@@ -258,7 +286,7 @@
   (add-hook 'after-init-hook 'global-company-mode))
 
 (use-package company-auctex
-  yy  :ensure t
+  :ensure t
   :defer t)
 
 (use-package company-bibtex
@@ -540,6 +568,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;;
+;;load safe theme customize data
+;;
+
+(load custom-file)
+
+;;
+;; load themes
+;;
+
 (use-package leuven-theme
   :ensure t
   :config (progn (load-theme 'leuven t t)
@@ -553,7 +591,7 @@
   :config (progn (load-theme 'solarized-dark t t)
 		 (load-theme 'solarized-light t t)))
 
-(use-package zenburn
+(use-package zenburn-theme
   :ensure t
   :defines zenburn
   :config (progn (load-theme zenburn t t)))
@@ -567,7 +605,7 @@
 ;;
 ;; turn debugging off
 ;;
-(load custom-file)
+
 (setq debug-on-error nil)
 (provide 'init)
 ;;; init.el ends here
