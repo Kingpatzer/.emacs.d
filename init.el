@@ -207,6 +207,13 @@
 	TeX-parse-self t
 	reftex-plug-into-AUCTex t))
 
+(use-package auto-compile
+  :ensure t
+  :init (setq load-prefer-newer t)
+  (auto-compile-on-load-mode)
+  (auto-compile-on-save-mode))
+
+
 (use-package cider
   :ensure t
   :defer t
@@ -251,7 +258,7 @@
   (add-hook 'after-init-hook 'global-company-mode))
 
 (use-package company-auctex
-  :ensure t
+  yy  :ensure t
   :defer t)
 
 (use-package company-bibtex
@@ -286,12 +293,19 @@
   :init (setq cycle-themes-theme-list
 	      '(leuven
 		zenburn
-		leuven-dark
 		professional
+		leuven-dark
 		solarized-light
 		tango-dark
 		tango
 		solarized-dark))
+  (add-hook 'cycle-themes-after-cycle-hook
+	    #'(lambda ()
+		(dolist
+		    (frame
+		     (frame-list)
+		     (set-face-attribute 'fringe frame
+					 :background (face-background 'default))))))
   :config (cycle-themes-mode)
   :bind (("C-x T T" . cycle-themes)))
 
@@ -319,6 +333,7 @@
   :bind (("C-;" . flyspell-mode)
 	 ("C-:" . flyspell-check-next-highlighted-word)))
 
+
 (use-package helm
   :ensure t
   :defer t
@@ -338,7 +353,7 @@
   :init
   (require 'helm-config)
   (require 'helm-eshell)
-  ;;(require 'helm-bookmarks)
+  (require 'helm-bookmark)
   (helm-mode t)
   (setq helm-net-prefer-curl t
 	helm-split-window-inside-p t
@@ -356,14 +371,13 @@
 	helm-mini-default-sources '(helm-source-buffers-list
 				    helm-source-recentf
 				    helm-source-bookmarks
-				    helm-source-bookmarks-set
 				    helm-source-buffer-not-found))
   :bind
   (("M-x"        . helm-M-x)
    ("C-x C-m"    . helm-M-x)
    ("M-y"        . helm-show-kill-ring)
    ("C-x b"      . helm-mini)
-   ;;   ("C-x C-b"    . helm-buffer-list)
+   ("C-x C-b"    . helm-buffer-list)
    ("C-x C-f"    . helm-find-files)
    ("C-h f"      . helm-apropos)
    ("C-h r"      . helm-info-emacs)
@@ -399,6 +413,25 @@
    ("d"          . helm-persistent-delete-marked)
    ("f"          . helm-follow-mode)
    ("ESC"        . helm-keyboard-quit)))
+
+
+(use-package ispell
+  :ensure t
+  :defer t
+  :init (setq ispell-dictionary "en_US"
+	      ispell-program-name "hunspell"))
+
+(use-package key-chord
+  :ensure t
+  :defer t)
+
+
+(use-package magit
+  :ensure t
+  :defer t
+  :bind (("C-x g" . magit-status)
+	 ("C-x M-g" . magit-dispatch-popup)))
+  
 
 
 (use-package org-bullets
@@ -465,14 +498,20 @@
 	 ("C-x o c"   . org-capture)))
 
 
-
-
-
-(use-package ispell
+(use-package slime
   :ensure t
   :defer t
-  :init (setq ispell-dictionary "en_US"
-	      ispell-program-name "hunspell"))
+  :defines (inferior-lisp-program
+	    slime-contribs)
+  :init (setq inferior-lisp-program "/usr/local/bin/ccl"
+	      slime-contribs '(slime-fancy
+			       slime-tramp
+			       slime-asdf))
+  :bind (:slime-prefix-map
+	 ("M-h" . slime-documentaion-lookup))
+  :config
+  (slime-require :swank-listener-hooks))
+
 
 (use-package paredit
   :ensure t
@@ -487,6 +526,9 @@
 
 
 
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;      Load Themes
@@ -498,18 +540,29 @@
 
 
 (use-package leuven-theme
-  :ensure t)
+  :ensure t
+  :config (progn (load-theme 'leuven t t)
+		 (load-theme 'leuven-dark t t)))
 
 (use-package professional-theme
   :ensure t)
 
 (use-package solarized-theme
-  :ensure t)
+  :ensure t
+  :config (progn (load-theme 'solarized-dark t t)
+		 (load-theme 'solarized-light t t)))
 
-(use-package zenburn-theme
-  :ensure t)
+(use-package zenburn
+  :ensure t
+  :defines zenburn
+  :config (progn (load-theme zenburn t t)))
 
 
+(use-package color-theme-tango
+  :ensure t
+  :defines tango
+  :config (progn (load-theme tango t t )
+		 (load-theme tango-dark t t)))
 ;;
 ;; turn debugging off
 ;;
