@@ -73,11 +73,11 @@
 
 ;; Nice fairly universal font
 
-(set-frame-font "DejaVu Sans Mono-12")
+(set-frame-font "DejaVu Sans Mono-15")
 (add-to-list 'initial-frame-alist
-	     '(font . "DejaVu Sans Mono-12"))
+	     '(font . "DejaVu Sans Mono-15"))
 (add-to-list 'default-frame-alist
-	     '(font . "DejaVu Sans Mono-12"))
+	     '(font . "DejaVu Sans Mono-15"))
 
 ;; utf-8 everywhere
 
@@ -240,6 +240,7 @@ Deactivates at first failt o prevent an infinite loop."
   :init (setq load-prefer-newer t)
   (auto-compile-on-load-mode)
   (auto-compile-on-save-mode))
+
 
 
 (use-package cider
@@ -527,6 +528,25 @@ Deactivates at first failt o prevent an infinite loop."
 	 ("C-x o c"   . org-capture)))
 
 
+(use-package paredit
+  :ensure t
+  :defer t
+  :config
+  (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
+  (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+  (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
+  (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
+  (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+  (add-hook 'scheme-mode-hook           #'enable-paredit-mode))
+
+
+(use-package rainbow-delimiters
+  :ensure t
+  :defer t
+  :config
+  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+
+
 (use-package slime
   :ensure t
   :defer t
@@ -541,17 +561,6 @@ Deactivates at first failt o prevent an infinite loop."
   :config
   (slime-require :swank-listener-hooks))
 
-
-(use-package paredit
-  :ensure t
-  :defer t
-  :config
-  (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
-  (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-  (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
-  (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
-  (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-  (add-hook 'scheme-mode-hook           #'enable-paredit-mode))
 
 
 
@@ -594,14 +603,14 @@ Deactivates at first failt o prevent an infinite loop."
 (use-package zenburn-theme
   :ensure t
   :defines zenburn
-  :config (progn (load-theme zenburn t t)))
+  :config (progn (load-theme 'zenburn t t)))
 
 
 (use-package color-theme-tango
   :ensure t
   :defines tango
-  :config (progn (load-theme tango t t )
-		 (load-theme tango-dark t t)))
+  :config (progn (load-theme 'tango t t )
+		 (load-theme 'tango-dark t t)))
 ;;
 ;; turn debugging off
 ;;
