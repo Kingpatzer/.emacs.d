@@ -277,7 +277,6 @@ Deactivates at first failt o prevent an infinite loop."
 
 (use-package company
   :ensure t
-  :defer t
   :defines (company-idle-delay
 	    company-tooltip-limit
 	    company-minimum-prefix-length
@@ -290,33 +289,23 @@ Deactivates at first failt o prevent an infinite loop."
   (add-hook 'after-init-hook 'global-company-mode))
 
 (use-package company-auctex
-  :ensure t
-  :defer t)
+  :ensure t)
 
 (use-package company-bibtex
-  :ensure t
-  :defer t)
+  :ensure t)
 
 (use-package company-jedi
-  :ensure t
-  :defer t)
-
-
-;; (use-package company-lisp
-;;   :ensure t
-;;   :defer t)
+  :ensure t)
 
 (use-package company-math
-  :ensure
-  :defer t)
+  :ensure t)
 
 (use-package company-shell
-  :ensure t
-  :defer t)
+  :ensure t)
 
 (use-package company-try-hard
   :ensure t
-  :defer t)
+  :bind ("C-z" . company-try-hard))
 
 (use-package cycle-themes
   :ensure t
@@ -584,6 +573,9 @@ Deactivates at first failt o prevent an infinite loop."
   :config
   (slime-require :swank-listener-hooks))
 
+(use-package slime-company
+  :ensure t)
+
 (use-package spaceline
   :ensure t
   :config
@@ -594,6 +586,10 @@ Deactivates at first failt o prevent an infinite loop."
   :after spaceline
   :ensure t
   :config (spaceline-all-the-icons-theme)
+  (spaceline-toggle-all-the-icons-bookmark-on)
+  (spaceline-toggle-all-the-icons-dedicated-on)
+  (spaceline-toggle-all-the-icons-buffer-position-on)
+  (spaceline-toggle-all-the-icons-narrowed-on)
   (spaceline-all-the-icons--setup-anzu)
   (spaceline-all-the-icons--setup-package-updates)
   (spaceline-all-the-icons--setup-git-ahead)
