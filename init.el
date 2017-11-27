@@ -219,6 +219,9 @@ Deactivates at first failt o prevent an infinite loop."
   (global-aggressive-indent-mode 1)
   (add-to-list 'aggressive-indent-excluded-modes 'html-mode))
 
+(use-package all-the-icons
+  :ensure t)
+
 (use-package anzu
   :ensure t
   :config
@@ -338,6 +341,15 @@ Deactivates at first failt o prevent an infinite loop."
   :config (cycle-themes-mode)
   :bind (("C-x T T" . cycle-themes)))
 
+(use-package diminish
+  :ensure t
+  :config (require 'diminish))
+
+(use-package dired+
+  :ensure t
+  :defer t
+  :config (require 'dired+))
+
 (use-package ebib
   :ensure t
   :defer t
@@ -448,7 +460,11 @@ Deactivates at first failt o prevent an infinite loop."
   :ensure t
   :defer t
   :init (setq ispell-dictionary "en_US"
-	      ispell-program-name "hunspell"))
+	      ispell-program-name "aspell"))
+
+(use-package info+
+  :ensure t
+  :defer t)
 
 (use-package key-chord
   :ensure t
@@ -530,14 +546,21 @@ Deactivates at first failt o prevent an infinite loop."
 
 (use-package paredit
   :ensure t
-  :defer t
-  :config
+  :init
   (add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
   (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
   (add-hook 'ielm-mode-hook             #'enable-paredit-mode)
   (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
   (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
   (add-hook 'scheme-mode-hook           #'enable-paredit-mode))
+
+(use-package persp-mode
+  :ensure t
+  :defines (wg-morph-on persp-autokill-buffer-on-remove)
+  :init (with-eval-after-load "persp-mode-autoloads"
+	  (setq wg-morph-on nil
+		persp-auto-kill-buffer-on-remove 'kill-weak)
+	  (add-hook 'after-init-hook #'(lambda () persp-mode 1))))
 
 
 (use-package rainbow-delimiters
@@ -561,7 +584,33 @@ Deactivates at first failt o prevent an infinite loop."
   :config
   (slime-require :swank-listener-hooks))
 
+(use-package spaceline
+  :ensure t
+  :config
+  (require 'spaceline-config)
+  :init (setq powerlinne-default-separator 'arrow-fade))
 
+(use-package spaceline-all-the-icons
+  :after spaceline
+  :ensure t
+  :config (spaceline-all-the-icons-theme)
+  (spaceline-all-the-icons--setup-anzu)
+  (spaceline-all-the-icons--setup-package-updates)
+  (spaceline-all-the-icons--setup-git-ahead)
+  (spaceline-all-the-icons--setup-paradox)
+  (spaceline-all-the-icons--setup-neotree))
+
+(use-package winum
+  :ensure t
+  :defines (winum-auto-setup-mode-line)
+  :init (setq winum-auto-setup-mode-line nil)
+  (winum-mode))
+
+(use-package workgroups
+  :ensure t
+  :config (require 'workgroups)
+  (workgroups-mode)
+  :bind ("C-c w" . wg-prefix-key))
 
 
 
@@ -618,3 +667,4 @@ Deactivates at first failt o prevent an infinite loop."
 (setq debug-on-error nil)
 (provide 'init)
 ;;; init.el ends here
+(put 'dired-find-alternate-file 'disabled nil)
