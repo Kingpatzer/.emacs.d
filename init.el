@@ -107,9 +107,11 @@ Deactivates at first failt o prevent an infinite loop."
     (ad-activate 'isearch-repeat)))
 
 
-;;
-;; linum in programing modes and add padding
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 					        ;;
+;;  linum in programing modes and add padding   ;;
+;;  					        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (add-hook 'prog-mode-hook 'linum-mode)
 (defvar linum-format)
@@ -186,6 +188,14 @@ Deactivates at first failt o prevent an infinite loop."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;;  My functions
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;;      Load Packages
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -256,6 +266,18 @@ Deactivates at first failt o prevent an infinite loop."
   (add-hook 'cider-mode-hook 'cider-company-enable-fuzzy-completion)
   (add-hook 'cider-repl-mode-hook 'cider-company-enable-fuzzy-completion)
   (add-hook 'cider-repl-mode-hook 'paredit-mode))
+
+(use-package circe
+  :ensure t
+  :defer t
+  :config
+  (setq circe-network-options '(("Freenode"
+				 :tls t
+				 :nick "kingpatzer"
+				 :sasl-username "kingpatzer"
+				 :sasl-password "shadowfax"
+				 :channels ("#emacs" "#emacs-circe"
+					    "#nethack")))))
 
 (use-package clojure-cheatsheet
   :ensure t
@@ -349,6 +371,7 @@ Deactivates at first failt o prevent an infinite loop."
   (use-package exec-path-from-shell
     :ensure t
     :init (exec-path-from-shell-initialize)))
+
 
 (use-package flycheck
   :ensure t
@@ -564,7 +587,7 @@ Deactivates at first failt o prevent an infinite loop."
   :defer t
   :defines (inferior-lisp-program
 	    slime-contribs)
-  :init (setq inferior-lisp-program "/usr/local/bin/ccl"
+  :init (setq inferior-lisp-program "/usr/local/bin/sbcl"
 	      slime-contribs '(slime-fancy
 			       slime-tramp
 			       slime-asdf))
