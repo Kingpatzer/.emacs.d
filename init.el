@@ -28,7 +28,7 @@
 ;;
 
 (setq custom-file
-      (concat user-emacs-directory ".unused-custom.el"))
+      (concat user-emacs-directory "custom.el"))
 
 ;;
 ;; who am i
@@ -69,7 +69,7 @@
 (menu-bar-mode 0)
 (set-scroll-bar-mode nil)
 (setq inhibit-startup-screen t)
-(fringe-mode 0)
+(fringe-mode '(8 . 8))
 
 ;; Nice fairly universal font
 
@@ -115,7 +115,7 @@ Deactivates at first failt o prevent an infinite loop."
 
 (add-hook 'prog-mode-hook 'linum-mode)
 (defvar linum-format)
-(setq linum-format "%4d \u2502 ")
+(setq linum-format "%4d \u2502")
 
 ;;
 ;; highlight current line in programming modes
@@ -135,9 +135,9 @@ Deactivates at first failt o prevent an infinite loop."
 
 
 (setq
-  uniquify-buffer-name-style 'forward    ; names use / for delimiter
-  uniquify-after-kill-buffer-p t         ; rationalize after kill
-  uniquify-ignore-buffers-re "^\\*")     ; ignore system buffers
+ uniquify-buffer-name-style 'forward    ; names use / for delimiter
+ uniquify-after-kill-buffer-p t         ; rationalize after kill
+ uniquify-ignore-buffers-re "^\\*")     ; ignore system buffers
 
 ;; the minibuffer needs some tweaks
 
@@ -224,7 +224,6 @@ Deactivates at first failt o prevent an infinite loop."
 
 (use-package aggressive-indent
   :ensure t
-  :defines aggressive-indent-exclude-modes
   :config
   (global-aggressive-indent-mode 1)
   (add-to-list 'aggressive-indent-excluded-modes 'html-mode))
@@ -254,6 +253,13 @@ Deactivates at first failt o prevent an infinite loop."
   (auto-compile-on-load-mode)
   (auto-compile-on-save-mode))
 
+(use-package auto-package-update
+  :ensure t
+  :init (auto-package-update-maybe))
+
+(use-package bookmark+
+  :ensure t
+  :config (require 'bookmark+))
 
 
 (use-package cider
@@ -261,8 +267,8 @@ Deactivates at first failt o prevent an infinite loop."
   :defer t
   :defines (cider-repl-pop-to-buffer-on-connect
 	    cider-repl-use-pretty-printing)
-  :config (seq cider-repl-pop-to-buffer-on-connect 'display-only
-	       cider-repl-use-pretty-printing t)
+  :config (setq cider-repl-pop-to-buffer-on-connect 'display-only
+		cider-repl-use-pretty-printing t)
   (add-hook 'cider-mode-hook 'cider-company-enable-fuzzy-completion)
   (add-hook 'cider-repl-mode-hook 'cider-company-enable-fuzzy-completion)
   (add-hook 'cider-repl-mode-hook 'paredit-mode))
@@ -372,6 +378,10 @@ Deactivates at first failt o prevent an infinite loop."
     :ensure t
     :init (exec-path-from-shell-initialize)))
 
+(use-package eyebrowse
+  :ensure t
+  :config (require 'eyebrowse))
+
 
 (use-package flycheck
   :ensure t
@@ -385,6 +395,9 @@ Deactivates at first failt o prevent an infinite loop."
 	  (add-hook hook (lambda () (flyspell-mode 1))))
   :bind (("C-;" . flyspell-mode)
 	 ("C-:" . flyspell-check-next-highlighted-word)))
+
+(use-package golden-ratio
+  :ensure t)
 
 
 (use-package helm
@@ -468,6 +481,18 @@ Deactivates at first failt o prevent an infinite loop."
    ("ESC"        . helm-keyboard-quit)))
 
 
+(use-package helm-descbinds
+  :ensure t
+  :init (helm-descbinds-mode t))
+
+(use-package helm-describe-modes
+  :ensure t
+  :bind ("C-h m" . helm-describe-modes))
+
+(use-package helm-projectile
+  :ensure t
+  :bind ("C-c p h" . helm-projectile))
+
 (use-package ispell
   :ensure t
   :defer t
@@ -488,7 +513,7 @@ Deactivates at first failt o prevent an infinite loop."
   :defer t
   :bind (("C-x g" . magit-status)
 	 ("C-x M-g" . magit-dispatch-popup)))
-  
+
 
 
 (use-package org-bullets
@@ -510,13 +535,13 @@ Deactivates at first failt o prevent an infinite loop."
 	    org-agenda-remove-tags)
   :init
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
-  (setq org-directory (expand-file-name "~/FreeNAS_Home/Emacs/Org")
-	org-agenda-files '("~/FreeNAS_Home/Emacs/Org/Home.org"
-			   "~/FreeNAS_Home/Emacs/Org/Work.org"
-			   "~/FreeNAS_Home/Emacs/Org/index.org"
-			   "~/FreeNAS_Home/Emacs/Org/Other.org"
-			   "~/FreeNAS_Home/Emacs/Org/School.org"
-			   "~/FreeNAS_Home/Emacs/Org/Personal.org")
+  (setq org-directory (expand-file-name "~/Nextcloud/Documents/Org")
+	org-agenda-files '("~/Nextcloud/Documents/Org/Home.org"
+			   "~/Nextcloud/Documents/Org/Work.org"
+			   "~/Nextcloud/Documents/Org/index.org"
+			   "~/Nextcloud/Documents/Org/Other.org"
+			   "~/Nextcloud/Documents/Org/School.org"
+			   "~/Nextcloud/Documents/Org/Personal.org")
 	org-todo-keywords '((sequence "IDEA(i)" "TODO(t)"
 				      "STARTED(s)" "NEXT(n)"
 				      "WAITING(w)" "|" "DONE(d)")
@@ -566,25 +591,39 @@ Deactivates at first failt o prevent an infinite loop."
   (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
   (add-hook 'scheme-mode-hook           #'enable-paredit-mode))
 
+(defvar persp-auto-kill-buffer-on-remove)
+
 (use-package persp-mode
   :ensure t
-  :defines (wg-morph-on persp-autokill-buffer-on-remove)
+  :after workgroup
   :init (with-eval-after-load "persp-mode-autoloads"
-	  (setq wg-morph-on nil
-		persp-auto-kill-buffer-on-remove 'kill-weak)
+	  (setq persp-auto-kill-buffer-on-remove 'kill-weak)
 	  (add-hook 'after-init-hook #'(lambda () persp-mode 1))))
 
+(use-package projectile
+  :ensure t
+  :config (require 'projectile))
 
 (use-package rainbow-delimiters
   :ensure t
-  :defer t
-  :config
-  (add-hook 'prog-mode-hook 'rainbow-delimiters-mode))
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+
+(use-package shell-pop
+  :ensure t
+  :defines (shell-pop-check-internal-mode
+	    shell-pop-set-window-position
+	    shell-pop-set-window-height
+	    shell-pop-internal-mode-shell)
+  :config (setq shell-pop-internal-mode "ansi-term"
+		shell-pop-internal-mode-shell "/bin/zsh"
+		shell-pop-set-window-height 40
+		shell-pop-set-window-position "bottom")
+  :bind ([f8] . shell-pop))
 
 
 (use-package slime
   :ensure t
-  :defer t
   :defines (inferior-lisp-program
 	    slime-contribs)
   :init (setq inferior-lisp-program "/usr/local/bin/sbcl"
@@ -602,8 +641,7 @@ Deactivates at first failt o prevent an infinite loop."
 (use-package spaceline
   :ensure t
   :config
-  (require 'spaceline-config)
-  :init (setq powerlinne-default-separator 'arrow-fade))
+  (require 'spaceline-config))
 
 (use-package spaceline-all-the-icons
   :after spaceline
@@ -622,16 +660,31 @@ Deactivates at first failt o prevent an infinite loop."
 (use-package winum
   :ensure t
   :defines (winum-auto-setup-mode-line)
-  :init (setq winum-auto-setup-mode-line nil)
+  :config (setq winum-auto-setup-mode-line nil)
   (winum-mode))
 
 (use-package workgroups
   :ensure t
+  :defines wq-morph-on
   :config (require 'workgroups)
   (workgroups-mode)
+  (setq wq-morph-on nil)
   :bind ("C-c w" . wg-prefix-key))
 
-
+(use-package yahoo-weather
+  :ensure t
+  :config (setq yahoo-weather-use-F t
+		yahoo-weather-update-interval 3600)
+  (require 'request)
+  (defun daw-set-yahoo-weather-location ()
+    (request "https://ipinfo.io"
+             :parser 'json-read
+             :success (cl-function
+		       (lambda (&key data &allow-other-keys)
+                         (setq yahoo-weather-location (format "%s, %s" (assoc-default 'city data) (assoc-default 'region data)))))))
+  (run-with-timer 0 (* 30 60) 'daw-set-yahoo-weather-location)
+  
+  :init (yahoo-weather-mode))
 
 
 
@@ -670,13 +723,11 @@ Deactivates at first failt o prevent an infinite loop."
 
 (use-package zenburn-theme
   :ensure t
-  :defines zenburn
   :config (progn (load-theme 'zenburn t t)))
 
 
 (use-package color-theme-tango
   :ensure t
-  :defines tango
   :config (progn (load-theme 'tango t t )
 		 (load-theme 'tango-dark t t)))
 ;;
@@ -686,4 +737,3 @@ Deactivates at first failt o prevent an infinite loop."
 (setq debug-on-error nil)
 (provide 'init)
 ;;; init.el ends here
-(put 'dired-find-alternate-file 'disabled nil)
