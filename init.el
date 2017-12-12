@@ -182,6 +182,7 @@ Deactivates at first failt o prevent an infinite loop."
   (package-install 'use-package))
 
 (eval-when-compile
+  (add-to-list 'load-path "~/.emacs.d/elpa/use-package/")
   (require 'use-package))
 (require 'diminish)
 (require 'bind-key)
@@ -258,8 +259,7 @@ Deactivates at first failt o prevent an infinite loop."
   :init (auto-package-update-maybe))
 
 (use-package bookmark+
-  :ensure t
-  :config (require 'bookmark+))
+  :ensure t)
 
 
 (use-package cider
@@ -601,13 +601,14 @@ Deactivates at first failt o prevent an infinite loop."
 	  (add-hook 'after-init-hook #'(lambda () persp-mode 1))))
 
 (use-package projectile
-  :ensure t
-  :config (require 'projectile))
+  :ensure t)
 
 (use-package rainbow-delimiters
   :ensure t
   :hook (prog-mode . rainbow-delimiters-mode))
 
+(use-package request
+  :ensure t)
 
 (use-package shell-pop
   :ensure t
@@ -630,8 +631,8 @@ Deactivates at first failt o prevent an infinite loop."
 	      slime-contribs '(slime-fancy
 			       slime-tramp
 			       slime-asdf))
-  :bind (:slime-prefix-map
-	 ("M-h" . slime-documentaion-lookup))
+  :bind (:map slime-prefix-map
+	      ("M-h" . slime-documentaion-lookup))
   :config
   (slime-require :swank-listener-hooks))
 
@@ -674,17 +675,18 @@ Deactivates at first failt o prevent an infinite loop."
 (use-package yahoo-weather
   :ensure t
   :config (setq yahoo-weather-use-F t
-		yahoo-weather-update-interval 3600)
+		yahoo-weather-update-interval 360)
   (require 'request)
   (defun daw-set-yahoo-weather-location ()
     (request "https://ipinfo.io"
              :parser 'json-read
              :success (cl-function
 		       (lambda (&key data &allow-other-keys)
-                         (setq yahoo-weather-location (format "%s, %s" (assoc-default 'city data) (assoc-default 'region data)))))))
+                         (setq yahoo-weather-location (format "%s, %s"
+							      (assoc-default 'city data)
+							      (assoc-default 'region data)))))))
   (run-with-timer 0 (* 30 60) 'daw-set-yahoo-weather-location)
-  
-  :init (yahoo-weather-mode))
+  (yahoo-weather-mode))
 
 
 
